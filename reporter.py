@@ -15,6 +15,10 @@ def to_mb(v):
     return math.ceil(float(v) / (1024*1024))
 
 
+def round_2(v):
+    return round(float(v), 2)
+
+
 def promql_j2(template_name, **kwargs):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     filename = os.path.join(dir_path, 'promql', template_name)
@@ -37,9 +41,7 @@ def promql(query):
 
 
 def store_metrics(metrics_dict, metrics, metric_name,
-                  value_handler=None,
-                  **labels):
-
+                  value_handler=None):
     for info in metrics:
         metric = info['metric']
         value = info['value'][1]
@@ -55,11 +57,7 @@ def store_metrics(metrics_dict, metrics, metric_name,
         key = "/".join([cluster, namespace, app, container])
 
         metrics_dict.setdefault(key, {})
-
-        metrics_dict[key][metric_name] = {
-            'labels': labels,
-            'value': value
-        }
+        metrics_dict[key][metric_name] = value
 
 
 def main():
@@ -70,11 +68,7 @@ def main():
                           metric='container_memory_usage_bytes',
                           quantile='0.8',
                           timerange='1h')
-
-    store_metrics(metrics, mem_usage,
-                  'memory_usage',
-                  quantile='0.8',
-                  value_handler=to_mb)
+    store_metrics(metrics, mem_usage, 'memory_usage', value_handler=to_mb)
 
     # memory requests
     mem_reqs_metric = 'kube_pod_container_resource_requests_memory_bytes'
@@ -94,10 +88,7 @@ def main():
                           metric=cpu_usage_metric,
                           quantile='0.8',
                           timerange='1h')
-
-    store_metrics(metrics, cpu_usage,
-                  'cpu_usage', quantile='0.8',
-                  value_handler=lambda x: round(float(x), 2))
+    store_metrics(metrics, cpu_usage, 'cpu_usage', value_handler=round_2)
 
     # cpu requests
     cpu_reqs_metric = 'kube_pod_container_resource_requests_cpu_cores'
