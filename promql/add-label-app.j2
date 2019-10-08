@@ -1,0 +1,5 @@
+label_replace({{ metric }}, "container_name", "$1", "container", "(.*)")
+* on (cluster, namespace, pod)
+group_left(label_app)
+max(kube_pod_labels{label_app!=""})
+by (label_app, pod, namespace, cluster)
