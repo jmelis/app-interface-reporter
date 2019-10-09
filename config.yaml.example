@@ -1,0 +1,6 @@
+---
+timerange: 1h
+prometheus:
+- name: prom-name
+  url: https://prometheus
+  authorization: "Basic TOKEN_BASE64"

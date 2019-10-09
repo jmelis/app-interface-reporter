@@ -4,12 +4,14 @@ import os
 import json
 import math
 
+import yaml
 import jinja2
 import requests
-from requests.auth import HTTPBasicAuth
 
-PROMQL_API_URL = 'https://prometheus.app-sre.devshift.net/api/v1/query'
-TIMERANGE = "7d"
+
+# read config
+with open('config.yaml', 'r') as config_file:
+    CONFIG = yaml.safe_load(config_file)
 
 
 def to_mb(v):
@@ -36,33 +38,42 @@ def promql_j2(template_name, **kwargs):
 
 
 def promql(query):
+    results = {}
+
     params = {'query': query}
-    auth = HTTPBasicAuth(
-        os.environ['APPSRE_PROM_USERNAME'],
-        os.environ['APPSRE_PROM_PASSWORD']
-    )
-    response = requests.get(PROMQL_API_URL, params=params, auth=auth)
-    return response.json()['data']['result']
+    for prom in CONFIG['prometheus']:
+        headers = {}
+
+        if prom.get('authorization'):
+            headers['Authorization'] = prom['authorization']
+
+        response = requests.get(prom['url'],
+                                params=params,
+                                headers=headers).json()
+
+        results[prom['name']] = response['data']['result']
+
+    return results
 
 
-def store_metrics(metrics_dict, metrics, metric_name,
+def store_metrics(metrics_dict, metrics_result, metric_name,
                   handler=None):
-    for info in metrics:
-        metric = info['metric']
-        value = info['value'][1]
+    for prom_name, metrics in metrics_result.items():
+        for info in metrics:
+            metric = info['metric']
+            value = info['value'][1]
 
-        cluster = metric['cluster']
-        namespace = metric['namespace']
-        app = metric['label_app']
-        container = metric.get('container_name')
+            namespace = metric['namespace']
+            app = metric['label_app']
+            container = metric.get('container_name')
 
-        if handler is not None:
-            value = handler(value)
+            if handler is not None:
+                value = handler(value)
 
-        key = "/".join([cluster, namespace, app, container])
+            key = "/".join([prom_name, namespace, app, container])
 
-        metrics_dict.setdefault(key, {})
-        metrics_dict[key][metric_name] = value
+            metrics_dict.setdefault(key, {})
+            metrics_dict[key][metric_name] = value
 
 
 def main():
@@ -72,7 +83,7 @@ def main():
     mem_usage = promql_j2('quantile-per-container.j2',
                           metric='container_memory_usage_bytes',
                           quantile='0.8',
-                          timerange='1h')
+                          timerange=CONFIG['timerange'])
     store_metrics(metrics, mem_usage, 'memory_usage_q0.8', handler=to_mb)
 
     # memory requests
@@ -92,7 +103,7 @@ def main():
     cpu_usage = promql_j2('quantile-per-container.j2',
                           metric=cpu_usage_metric,
                           quantile='0.8',
-                          timerange=TIMERANGE)
+                          timerange=CONFIG['timerange'])
     store_metrics(metrics, cpu_usage, 'cpu_usage_q0.8', handler=round_2)
 
     # cpu requests
