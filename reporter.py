@@ -116,7 +116,7 @@ def main():
     cpu_limits = promql_j2('add-label-app.j2', metric=cpu_limits_metric)
     store_metrics(metrics, cpu_limits, 'cpu_limits', handler=to_float)
 
-    print(json.dumps(metrics))
+    print(json.dumps(metrics, indent=4))
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 max(
     label_replace(
-        quantile_over_time({{ quantile }}, {{ metric }}{container_name!="POD", container_name!="",pod_name!=""}[{{ timerange }}]),
+        quantile_over_time({{ quantile }}, {{ metric }}{namespace!~"^(openshift-|kube-|ops-|default|logging).*", container_name!="POD", container_name!="",pod_name!=""}[{{ timerange }}]),
         "pod", "$1", "pod_name", "(.*)"
     ) * on (namespace, pod) group_left(label_app) max(kube_pod_labels{label_app!=""}) by (label_app, pod, namespace)
 ) by (label_app, container_name, namespace)
