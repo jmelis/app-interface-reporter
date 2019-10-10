@@ -62,8 +62,11 @@ def store_metrics(metrics_dict, metrics_result, metric_name,
             value = info['value'][1]
 
             namespace = metric['namespace']
-            app = metric['label_app']
+            app = metric.get('label_app')
             container = metric.get('container_name')
+
+            if app is None:
+                continue
 
             if handler is not None:
                 value = handler(value)
