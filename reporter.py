@@ -13,15 +13,11 @@ from tabulate import tabulate
 
 
 def to_mb(v):
-    return math.ceil(float(v) / (1024*1024))
+    return str(math.ceil(float(v) / (1024*1024))) + 'Mi'
 
 
-def to_float(v):
-    return float(v)
-
-
-def round_2(v):
-    return round(float(v), 2)
+def to_millicore(v):
+    return str(round(float(v) * 1000)) + 'm'
 
 
 def promql_j2(proms, template_name, **kwargs):
@@ -122,17 +118,17 @@ def main():
                           metric=cpu_usage_metric,
                           quantile='0.8',
                           timerange=config['timerange'])
-    store_metrics(metrics, cpu_usage, 'cpu_usage_q0.8', handler=round_2)
+    store_metrics(metrics, cpu_usage, 'cpu_usage_q0.8', handler=to_millicore)
 
     # cpu requests
     cpu_reqs_metric = 'kube_pod_container_resource_requests_cpu_cores'
     cpu_requests = promql_j2(proms, 'add-label-app.j2', metric=cpu_reqs_metric)
-    store_metrics(metrics, cpu_requests, 'cpu_requests', handler=to_float)
+    store_metrics(metrics, cpu_requests, 'cpu_requests', handler=to_millicore)
 
     # cpu limits
     cpu_limits_metric = 'kube_pod_container_resource_limits_cpu_cores'
     cpu_limits = promql_j2(proms, 'add-label-app.j2', metric=cpu_limits_metric)
-    store_metrics(metrics, cpu_limits, 'cpu_limits', handler=to_float)
+    store_metrics(metrics, cpu_limits, 'cpu_limits', handler=to_millicore)
 
     if args.format == 'json':
         metrics = {'/'.join(k): v for k, v in metrics.items()}
