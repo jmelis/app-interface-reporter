@@ -159,7 +159,8 @@ def main():
             'cpu_limits'
         ]
 
-        table = tabulate(table_data, table_headers, tablefmt=args.format)
+        table = tabulate(sorted(table_data), table_headers,
+                         tablefmt=args.format)
         print(table)
 
 
