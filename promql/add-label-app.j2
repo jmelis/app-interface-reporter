@@ -1,4 +1,4 @@
-label_replace({{ metric }}{namespace!~"^(openshift-|kube-|ops-|default|logging).*"}, "container_name", "$1", "container", "(.*)")
+label_replace({{ metric }}{namespace!~"^(openshift-|kube-|ops-|default|logging|system-).*"}, "container_name", "$1", "container", "(.*)")
 * on (namespace, pod)
 group_left(label_app)
 max(kube_pod_labels{label_app!=""})
