@@ -100,6 +100,12 @@ def main():
                           timerange=config['timerange'])
     store_metrics(metrics, mem_usage, 'memory_usage_q0.8', handler=to_mb)
 
+    mem_usage = promql_j2(proms, 'quantile-per-container.j2',
+                          metric='container_memory_usage_bytes',
+                          quantile='1',
+                          timerange=config['timerange'])
+    store_metrics(metrics, mem_usage, 'memory_usage_max', handler=to_mb)
+
     # memory requests
     mem_reqs_metric = 'kube_pod_container_resource_requests_memory_bytes'
     mem_requests = promql_j2(proms, 'add-label-app.j2', metric=mem_reqs_metric)
@@ -120,6 +126,12 @@ def main():
                           timerange=config['timerange'])
     store_metrics(metrics, cpu_usage, 'cpu_usage_q0.8', handler=to_millicore)
 
+    cpu_usage = promql_j2(proms, 'quantile-per-container.j2',
+                          metric=cpu_usage_metric,
+                          quantile='1',
+                          timerange=config['timerange'])
+    store_metrics(metrics, cpu_usage, 'cpu_usage_max', handler=to_millicore)
+
     # cpu requests
     cpu_reqs_metric = 'kube_pod_container_resource_requests_cpu_cores'
     cpu_requests = promql_j2(proms, 'add-label-app.j2', metric=cpu_reqs_metric)
@@ -138,9 +150,11 @@ def main():
             return [
                 *params,
                 values.get('memory_usage_q0.8'),
+                values.get('memory_usage_max'),
                 values.get('mem_requests'),
                 values.get('mem_limits'),
                 values.get('cpu_usage_q0.8'),
+                values.get('cpu_usage_max'),
                 values.get('cpu_requests'),
                 values.get('cpu_limits')
             ]
@@ -151,9 +165,11 @@ def main():
         table_headers = [
             'cluster', 'namespace', 'app', 'container',
             'memory_usage_q0.8',
+            'memory_usage_max',
             'mem_requests',
             'mem_limits',
             'cpu_usage_q0.8',
+            'cpu_usage_max',
             'cpu_requests',
             'cpu_limits'
         ]
